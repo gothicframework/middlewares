@@ -5,6 +5,7 @@
 package middlewares
 
 import (
+	"io/fs"
 	"net/http"
 	"strings"
 
@@ -15,6 +16,14 @@ import (
 
 	"github.com/go-chi/chi/v5"
 )
+
+// SetEmbeddedPublicFS registers the embed.FS backing /public/* when the app's
+// RuntimeConfig uses ServeStaticFiles == EMBEDDED. It forwards into the core
+// router. The generated root embed file (which owns the //go:embed public
+// directive) calls this from init(), before main(); user main.go imports this
+// package, not core/router directly. fsys MUST already be rooted at the public
+// dir (fs.Sub'd).
+func SetEmbeddedPublicFS(fsys fs.FS) { gothicRoutes.SetEmbeddedPublicFS(fsys) }
 
 // Middleware returns a chi middleware — applied like router.Use(middleware.Logger)
 // — that wires the whole Gothic runtime from a single RuntimeConfig: it initializes
