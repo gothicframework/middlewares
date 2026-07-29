@@ -25,7 +25,7 @@ import (
 // dir (fs.Sub'd).
 func SetEmbeddedPublicFS(fsys fs.FS) { gothicRoutes.SetEmbeddedPublicFS(fsys) }
 
-// Middleware returns a chi middleware — applied like router.Use(middleware.Logger)
+// Middleware returns a chi middleware — applied like router.Use(middlewares.Logger(...))
 // — that wires the whole Gothic runtime from a single RuntimeConfig: it initializes
 // the cache backend once, then serves the framework's built-in paths (/public/*
 // static assets and the /optimizedImage/* endpoint), letting every other request
