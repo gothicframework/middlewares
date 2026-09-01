@@ -4,8 +4,8 @@ go 1.26.0
 
 require (
 	github.com/go-chi/chi/v5 v5.2.5
-	github.com/gothicframework/components v1.3.0-beta.6
-	github.com/gothicframework/core v1.6.0-beta.12
+	github.com/gothicframework/components v1.3.0
+	github.com/gothicframework/core v1.6.0
 )
 
 require (
