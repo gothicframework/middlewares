@@ -7,6 +7,7 @@ package middlewares
 import (
 	"io/fs"
 	"net/http"
+	"os"
 	"strings"
 
 	gothicComponents "github.com/gothicframework/components"
@@ -46,13 +47,30 @@ func Middleware(cfg config.RuntimeConfig) func(http.Handler) http.Handler {
 	// /_gothic/* instead of copying them into every project's public/ folder.
 	internal.Handle(runtimeassets.Prefix+"*", runtimeassets.Handler())
 
+	// Dev-mode request tracer: GOTHIC_MODE is read once here at construction.
+	// In dev it installs the router-level trace hook, wraps the user's handler
+	// chain, and serves GET /_gothicframework/trace?last=N from the internal
+	// mux. Outside dev nothing is installed (TraceHook stays nil — the router
+	// call sites are a single nil check) and the trace endpoint 404s, because
+	// the /_gothicframework/* path routes to the internal mux where no handler
+	// is registered.
+	var tracer *requestTracer
+	if os.Getenv("GOTHIC_MODE") == "dev" {
+		tracer = newRequestTracer()
+		internal.Get("/_gothicframework/trace", tracer.serveTrace)
+	}
+
 	return func(next http.Handler) http.Handler {
+		userNext := next
+		if tracer != nil {
+			userNext = tracer.wrap(next)
+		}
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if p := r.URL.Path; strings.HasPrefix(p, "/public/") || strings.HasPrefix(p, "/optimizedImage/") || strings.HasPrefix(p, runtimeassets.Prefix) {
+			if p := r.URL.Path; strings.HasPrefix(p, "/public/") || strings.HasPrefix(p, "/optimizedImage/") || strings.HasPrefix(p, runtimeassets.Prefix) || strings.HasPrefix(p, "/_gothicframework/") {
 				internal.ServeHTTP(w, r)
 				return
 			}
-			next.ServeHTTP(w, r)
+			userNext.ServeHTTP(w, r)
 		})
 	}
 }
